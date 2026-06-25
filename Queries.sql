@@ -186,3 +186,141 @@ AND e1.emp_id > e2.emp_id;
 DESC Employee;
 
 DESC Department;
+
+-- ==========================================
+-- 19. Window Function - Rank Employees By Salary
+-- ==========================================
+
+SELECT emp_id,
+       first_name,
+       salary,
+       RANK() OVER (ORDER BY salary DESC) AS salary_rank
+FROM Employee;
+
+-- ==========================================
+-- 20. Window Function - Department Wise Salary Rank
+-- ==========================================
+
+SELECT emp_id,
+       first_name,
+       dept_id,
+       salary,
+       DENSE_RANK() OVER (
+           PARTITION BY dept_id
+           ORDER BY salary DESC
+       ) AS department_rank
+FROM Employee;
+
+-- ==========================================
+-- 21. Window Function - Running Total Salary
+-- ==========================================
+
+SELECT emp_id,
+       first_name,
+       salary,
+       SUM(salary) OVER (
+           ORDER BY emp_id
+       ) AS running_total_salary
+FROM Employee;
+
+-- ==========================================
+-- 22. CASE WHEN - Categorize Employees By Salary
+-- ==========================================
+
+SELECT emp_id,
+       first_name,
+       salary,
+       CASE
+           WHEN salary >= 70000 THEN 'High Salary'
+           WHEN salary >= 50000 THEN 'Medium Salary'
+           ELSE 'Low Salary'
+       END AS salary_category
+FROM Employee;
+
+-- ==========================================
+-- 23. CASE WHEN - Employee Status Description
+-- ==========================================
+
+SELECT emp_id,
+       first_name,
+       status,
+       CASE
+           WHEN status = 'Active' THEN 'Currently Working'
+           WHEN status = 'Inactive' THEN 'Not Working'
+           ELSE 'Unknown'
+       END AS employee_status
+FROM Employee;
+
+-- ==========================================
+-- 24. Create View - Employee Department Details
+-- ==========================================
+
+CREATE VIEW employee_department_view AS
+SELECT e.emp_id,
+       e.first_name,
+       e.last_name,
+       e.salary,
+       d.dept_name
+FROM Employee e
+INNER JOIN Department d
+ON e.dept_id = d.dept_id;
+
+-- ==========================================
+-- 25. Display View Data
+-- ==========================================
+
+SELECT *
+FROM employee_department_view;
+
+-- ==========================================
+-- 26. Create Salary Log Table
+-- ==========================================
+
+CREATE TABLE salary_log (
+    log_id INT PRIMARY KEY AUTO_INCREMENT,
+    emp_id INT,
+    old_salary DECIMAL(10,2),
+    new_salary DECIMAL(10,2),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 27. Create Trigger For Salary Updates
+-- ==========================================
+
+DELIMITER $$
+
+CREATE TRIGGER salary_update_trigger
+AFTER UPDATE ON Employee
+FOR EACH ROW
+BEGIN
+    INSERT INTO salary_log
+    (
+        emp_id,
+        old_salary,
+        new_salary
+    )
+    VALUES
+    (
+        OLD.emp_id,
+        OLD.salary,
+        NEW.salary
+    );
+END $$
+
+DELIMITER ;
+
+-- ==========================================
+-- 28. Test Trigger
+-- ==========================================
+
+UPDATE Employee
+SET salary = 80000
+WHERE emp_id = 1;
+
+-- ==========================================
+-- 29. Display Salary Log Records
+-- ==========================================
+
+SELECT *
+FROM salary_log;
